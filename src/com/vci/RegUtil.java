@@ -1,9 +1,9 @@
 package com.vci;
 
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.*;
 import java.util.*;
@@ -29,9 +29,11 @@ public class RegUtil {
         List<LinkedList<String[]>> result = new LinkedList<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "GBK"))) {
-            List<String> stringList = reader.lines().filter(str -> str.trim().length() > 0).map(str -> str.trim().toUpperCase()
-                    .replace("*", "/").replace("，", "/")
-                    .replace(",", "/").replaceAll("\\s", "")).collect(Collectors.toList());
+            List<String> stringList = reader.lines()
+                    .filter(str -> str.trim().length() > 0)
+                    .map(str -> str.trim().toUpperCase()
+                            .replaceAll("[*，,]+", "/").replaceAll("\\s", ""))
+                    .collect(Collectors.toList());
 
             String regex = "([\\u4e00-\\u9fa5]+)([\\d]*[\\d|X])[\\.|/]*([\\d]*)/*([\\.\\d]*)";
             Pattern pattern = Pattern.compile(regex);
@@ -59,8 +61,7 @@ public class RegUtil {
     }
 
     private static void writeXLS(List<LinkedList<String[]>> result) throws IOException {
-        POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(XLS_NAME));
-        HSSFWorkbook wb = new HSSFWorkbook(fs);
+        Workbook wb = new HSSFWorkbook(new FileInputStream(XLS_NAME));
 
         int pageAt = 1;//使用的sheet位置
         int page = 1; //sheet命名时用
@@ -74,7 +75,7 @@ public class RegUtil {
             page += pageNum;
 
             int row_num = startLine;
-            HSSFSheet sheet = wb.getSheetAt(pageAt);
+            Sheet sheet = wb.getSheetAt(pageAt);
 
             for (int i = 0; i < tempResult.size(); i++) {
                 String[] array = tempResult.get(i);
@@ -83,7 +84,7 @@ public class RegUtil {
                     row_num = startLine;
                     sheet = wb.getSheetAt(pageAt);
                 }
-                HSSFRow row = sheet.getRow(row_num);
+                Row row = sheet.getRow(row_num);
                 row.getCell(1).setCellValue(array[0]);
 
                 //校验身份证号码
